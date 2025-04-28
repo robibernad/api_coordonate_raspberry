@@ -31,6 +31,8 @@ class Coordinates(BaseModel):
     progress: float  # ADĂUGAT progress
 
 # 🔵 WebSocket pentru live update
+from fastapi import WebSocket, WebSocketDisconnect
+
 @app.websocket("/ws")
 async def websocket_endpoint(websocket: WebSocket):
     await websocket.accept()
@@ -38,9 +40,17 @@ async def websocket_endpoint(websocket: WebSocket):
 
     try:
         while True:
-            await websocket.receive_text()
-    except:
-        active_connections.remove(websocket)
+            # în loc să blochezi pe receive_text, doar aștepți mesaje dacă vin
+            try:
+                message = await websocket.receive_text()
+                print(f"Am primit de la client: {message}")  # debug
+            except WebSocketDisconnect:
+                print("Clientul s-a deconectat.")
+                break
+    finally:
+        if websocket in active_connections:
+            active_connections.remove(websocket)
+
 
 # 🔵 POST pentru actualizare coordonate + progress
 @app.post("/update-coordinates/")
