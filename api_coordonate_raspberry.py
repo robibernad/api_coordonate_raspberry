@@ -5,8 +5,17 @@ from typing import List
 import matplotlib.pyplot as plt
 import numpy as np
 import base64
+from fastapi.middleware.cors import CORSMiddleware
 
 app = FastAPI()
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],  # 🔥 Acceptă cereri din orice domeniu (sau pui domeniul frontendului tău dacă vrei mai sigur)
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
 
 # 🔵 Variabile globale
 last_coordinates = {
