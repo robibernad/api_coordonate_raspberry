@@ -1,7 +1,6 @@
 from fastapi import FastAPI
 from fastapi.responses import JSONResponse
 from pydantic import BaseModel
-from typing import List
 import matplotlib.pyplot as plt
 import numpy as np
 import base64
@@ -11,13 +10,12 @@ app = FastAPI()
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],  # 🔥 Acceptă cereri din orice domeniu (sau pui domeniul frontendului tău dacă vrei mai sigur)
+    allow_origins=["*"],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
 )
 
-# 🔵 Variabile globale
 last_coordinates = {
     "x_sonda": 0,
     "y_sonda": 0,
@@ -28,7 +26,6 @@ last_coordinates = {
     "progress": 0
 }
 
-# 🔵 Model coordonate primite
 class Coordinates(BaseModel):
     x_sonda: float
     y_sonda: float
@@ -38,19 +35,16 @@ class Coordinates(BaseModel):
     magnet_height: float
     progress: float
 
-# 🔵 POST pentru update coordonate (Raspberry Pi)
 @app.post("/update-coordinates/")
 async def update_coordinates(coords: Coordinates):
     global last_coordinates
     last_coordinates = coords.dict()
     return {"message": "Coordinates updated successfully"}
 
-# 🔵 GET pentru a obține ultimele coordonate
 @app.get("/get-latest-coordinates/")
 async def get_latest_coordinates():
     return last_coordinates
 
-# 🔵 POST pentru generarea imaginii
 @app.post("/genereaza-imagine/")
 async def genereaza_imagine(coords: Coordinates):
     try:
@@ -66,10 +60,8 @@ async def genereaza_imagine(coords: Coordinates):
         fig = plt.figure(figsize=(10, 8))
         ax = fig.add_subplot(111, projection='3d')
 
-        # Magnet
+        # Magnet - FIX, fără text adăugat
         ax.bar3d(0, 0, 0, magnet_length, magnet_width, magnet_height, color='blue', alpha=0.3, shade=True)
-        ax.plot([0, magnet_length], [0, 0], [magnet_height, magnet_height], color='black', linestyle='--', linewidth=2)
-        ax.text(magnet_length/2, -3, magnet_height + 0.5, "Suprafață Magnet", color='black', fontsize=12)
 
         # Sonda
         ax.scatter(x_sonda, y_sonda, z_sonda, color='red', s=150)
@@ -77,7 +69,7 @@ async def genereaza_imagine(coords: Coordinates):
         ax.scatter(x_sonda, y_sonda, magnet_height, color='black', s=50, alpha=0.7)
         ax.text(x_sonda + 1, y_sonda + 1, magnet_height, f"{z_masurat} mm", color='black', fontsize=12, bbox=dict(facecolor='white', alpha=0.8))
 
-        # Proiecții pe X și Y
+        # Proiecții
         ax.plot([x_sonda, x_sonda], [y_sonda, 0], [z_sonda, z_sonda], color='green', linestyle='--')
         ax.scatter(x_sonda, 0, z_sonda, color='green', s=50, alpha=0.7)
         ax.text(x_sonda + 1, 0, z_sonda + 1, f"{y_sonda}", color='green', fontsize=12, bbox=dict(facecolor='white', alpha=0.8))
@@ -86,7 +78,7 @@ async def genereaza_imagine(coords: Coordinates):
         ax.scatter(0, y_sonda, z_sonda, color='purple', s=50, alpha=0.7)
         ax.text(0, y_sonda + 1, z_sonda + 1, f"{x_sonda}", color='purple', fontsize=12, bbox=dict(facecolor='white', alpha=0.8))
 
-        # Punctul final 3D
+        # Punct 3D
         ax.text(x_sonda + 2, y_sonda + 2, z_sonda + 2, f"({x_sonda}, {y_sonda}, {z_masurat})", color='red', fontsize=14, bbox=dict(facecolor='white', alpha=0.8))
 
         # Setări axă
@@ -97,7 +89,7 @@ async def genereaza_imagine(coords: Coordinates):
         ax.set_ylabel('Y (mm)')
         ax.set_zlabel('Distanță (mm)')
 
-        # Custom ticks pe Z
+        # Custom Z ticks
         z_ticks_real = [0, magnet_height] + [magnet_height + i for i in range(5, 31, 5)]
         z_tick_labels = ['Baza Magnet', 'Suprafață Magnet'] + [f'{i} mm' for i in range(5, 31, 5)]
         ax.set_zticks(z_ticks_real)
