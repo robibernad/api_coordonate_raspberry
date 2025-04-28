@@ -75,13 +75,33 @@ async def genereaza_imagine(coords: Coordinates):
         ax.scatter(x_sonda, y_sonda, z_sonda, color='red', s=150)
         ax.plot([x_sonda, x_sonda], [y_sonda, y_sonda], [z_sonda, magnet_height], color='gray', linestyle='--')
         ax.scatter(x_sonda, y_sonda, magnet_height, color='black', s=50, alpha=0.7)
+        ax.text(x_sonda + 1, y_sonda + 1, magnet_height, f"{z_masurat} mm", color='black', fontsize=12, bbox=dict(facecolor='white', alpha=0.8))
 
+        # Proiecții pe X și Y
+        ax.plot([x_sonda, x_sonda], [y_sonda, 0], [z_sonda, z_sonda], color='green', linestyle='--')
+        ax.scatter(x_sonda, 0, z_sonda, color='green', s=50, alpha=0.7)
+        ax.text(x_sonda + 1, 0, z_sonda + 1, f"{y_sonda}", color='green', fontsize=12, bbox=dict(facecolor='white', alpha=0.8))
+
+        ax.plot([x_sonda, 0], [y_sonda, y_sonda], [z_sonda, z_sonda], color='purple', linestyle='--')
+        ax.scatter(0, y_sonda, z_sonda, color='purple', s=50, alpha=0.7)
+        ax.text(0, y_sonda + 1, z_sonda + 1, f"{x_sonda}", color='purple', fontsize=12, bbox=dict(facecolor='white', alpha=0.8))
+
+        # Punctul final 3D
+        ax.text(x_sonda + 2, y_sonda + 2, z_sonda + 2, f"({x_sonda}, {y_sonda}, {z_masurat})", color='red', fontsize=14, bbox=dict(facecolor='white', alpha=0.8))
+
+        # Setări axă
         ax.set_xlim(0, magnet_length)
         ax.set_ylim(0, magnet_width)
         ax.set_zlim(0, magnet_height + 30)
         ax.set_xlabel('X (mm)')
         ax.set_ylabel('Y (mm)')
         ax.set_zlabel('Distanță (mm)')
+
+        # Custom ticks pe Z
+        z_ticks_real = [0, magnet_height] + [magnet_height + i for i in range(5, 31, 5)]
+        z_tick_labels = ['Baza Magnet', 'Suprafață Magnet'] + [f'{i} mm' for i in range(5, 31, 5)]
+        ax.set_zticks(z_ticks_real)
+        ax.set_zticklabels(z_tick_labels)
 
         ax.set_title("Poziția sondei față de magnet")
         ax.view_init(elev=30, azim=45)
