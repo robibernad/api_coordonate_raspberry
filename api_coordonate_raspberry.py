@@ -1,4 +1,4 @@
-from fastapi import FastAPI, WebSocket
+from fastapi import FastAPI
 from fastapi.responses import JSONResponse
 from pydantic import BaseModel
 from typing import List
@@ -9,7 +9,6 @@ import base64
 app = FastAPI()
 
 # 🔵 Variabile globale
-active_connections: List[WebSocket] = []
 last_coordinates = {
     "x_sonda": 0,
     "y_sonda": 0,
@@ -17,7 +16,7 @@ last_coordinates = {
     "magnet_length": 30,
     "magnet_width": 20,
     "magnet_height": 5,
-    "progress": 0  # ADĂUGAT progress
+    "progress": 0
 }
 
 # 🔵 Model coordonate primite
@@ -28,43 +27,21 @@ class Coordinates(BaseModel):
     magnet_length: float
     magnet_width: float
     magnet_height: float
-    progress: float  # ADĂUGAT progress
+    progress: float
 
-# 🔵 WebSocket pentru live update
-from fastapi import WebSocket, WebSocketDisconnect
-
-@app.websocket("/ws")
-async def websocket_endpoint(websocket: WebSocket):
-    await websocket.accept()
-    active_connections.append(websocket)
-
-    try:
-        while True:
-            # în loc să blochezi pe receive_text, doar aștepți mesaje dacă vin
-            try:
-                message = await websocket.receive_text()
-                print(f"Am primit de la client: {message}")  # debug
-            except WebSocketDisconnect:
-                print("Clientul s-a deconectat.")
-                break
-    finally:
-        if websocket in active_connections:
-            active_connections.remove(websocket)
-
-
-# 🔵 POST pentru actualizare coordonate + progress
+# 🔵 POST pentru update coordonate (Raspberry Pi)
 @app.post("/update-coordinates/")
 async def update_coordinates(coords: Coordinates):
     global last_coordinates
     last_coordinates = coords.dict()
+    return {"message": "Coordinates updated successfully"}
 
-    # Trimitem coordonatele + progresul la toți conectați
-    for connection in active_connections:
-        await connection.send_json(last_coordinates)
+# 🔵 GET pentru a obține ultimele coordonate
+@app.get("/get-latest-coordinates/")
+async def get_latest_coordinates():
+    return last_coordinates
 
-    return {"message": "Coordinates and progress updated successfully"}
-
-# 🔵 POST pentru generare imagine
+# 🔵 POST pentru generarea imaginii
 @app.post("/genereaza-imagine/")
 async def genereaza_imagine(coords: Coordinates):
     try:
